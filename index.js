@@ -11,7 +11,8 @@ router.all('/', (ctx) => {
   ctx.redirect('https://koreanbots.dev')
 })
 
-router.all('/[id]', async (ctx) => {
+router.all('/:id', async (ctx) => {
+  console.log(ctx.params.id)
   const link = await knex('link').where({ id: ctx.params.id })
   if(link.length === 0) {
     ctx.status = 404
