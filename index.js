@@ -10,6 +10,17 @@ const knex = require('./db')
 
 app.use(BodyParser())
 
+app.use(async (ctx, next) => {
+  try {
+    await next()
+  } catch (err) {
+    ctx.status = err.statusCode || err.status || 500
+    ctx.body = {
+      message: err.message
+    }
+  }
+})
+
 router.all('/', (ctx) => {
   ctx.redirect('https://koreanbots.dev')
 })
@@ -21,22 +32,12 @@ router.post('/regist', async (ctx) => {
   if(!id || !redirect || !category) return ctx.body = { success: false, error: 'Please insert id, url, and category' }
   if(password !== process.env.SECRET_KEY) return ctx.body = { success: false, error: 'Invalid password' }
 
-  await knex('link').insert({
+  await knex(category).insert({
     id,
-    redirect,
-    category
-  }).then(() => {
-    ctx.body = {
-      success: true
-    }
-    console.log('success')
-  }).catch((err) => {
-    console.log(err)
-    return ctx.body = {
-      success: false,
-      error: 'Internal Server Error'
-    }
-  })
+    redirect
+  }).then(
+    ctx.status = 200
+  )
 })
 
 router.all('/:id', async (ctx) => {
@@ -53,7 +54,7 @@ router.all('/:id', async (ctx) => {
 })
 
 router.all('/b/:id', async (ctx) => {
-  const link = await knex('link').where({ id: ctx.params.id, category: 'b' })
+  const link = await knex('bot').where({ id: ctx.params.id })
   if(link.length === 0) {
     ctx.status = 404
     ctx.body = 'Not Found'
@@ -65,7 +66,7 @@ router.all('/b/:id', async (ctx) => {
 })
 
 router.all('/u/:id', async (ctx) => {
-  const link = await knex('link').where({ id: ctx.params.id, category: 'u' })
+  const link = await knex('user').where({ id: ctx.params.id })
   if(link.length === 0) {
     ctx.status = 404
     ctx.body = 'Not Found'
@@ -77,7 +78,7 @@ router.all('/u/:id', async (ctx) => {
 })
 
 router.all('/s/:id', async (ctx) => {
-  const link = await knex('link').where({ id: ctx.params.id, category: 's' })
+  const link = await knex('server').where({ id: ctx.params.id })
   if(link.length === 0) {
     ctx.status = 404
     ctx.body = 'Not Found'
